@@ -11,6 +11,7 @@ Image classification is a standard benchmark for studying how architecture and t
 ## Dataset
 - **CIFAR-10** (Krizhevsky, 2009): 60,000 color images of size 32×32 in 10 classes (airplane, automobile, bird, cat, deer, dog, frog, horse, ship, truck).
 - Official split: 50,000 train / 10,000 test.
+- **The dataset is not stored in this repo** (163 MB; GitHub blocks files over 100 MB). It downloads automatically on first run through `data_utils.py`, which tries a fast mirror and verifies the checksum before falling back to torchvision's default download.
 - **Split used here:** the 50,000 training images are divided into 45,000 train and 5,000 validation (stratified by class, fixed seed). The 10,000 test images are used **once per run**, only after selecting the best checkpoint on validation.
 - Preprocessing: per-channel mean/std normalization. Augmentation (train only): random crop with 4-pixel padding and random horizontal flip. Validation and test images are never augmented.
 
@@ -150,6 +151,7 @@ print(predict(model, Image.open("my_image.jpg")))
 ├── model.py                        # model definition
 ├── predict.py                      # classify your own images
 ├── evaluate.py                     # re-measure test accuracy
+├── data_utils.py                   # automatic, checksum-verified CIFAR-10 download
 ├── app.py                          # web demo (Gradio)
 ├── requirements.txt
 ├── results/
@@ -157,6 +159,7 @@ print(predict(model, Image.open("my_image.jpg")))
 │   ├── ablation.png
 │   ├── predictions.png
 │   └── ablation_summary.csv
+├── .gitignore
 ├── README.md
 └── LICENSE
 ```
