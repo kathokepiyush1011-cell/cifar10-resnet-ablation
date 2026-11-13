@@ -37,9 +37,9 @@ Each residual block computes `y = ReLU(F(x) + x)`, where `F` is Conv-BN-ReLU-Con
 | Batch size | 128 |
 | Loss | Cross-entropy with label smoothing 0.1 |
 | Precision | Mixed precision (AMP) on GPU |
-| Baseline epochs | ___ (fill in from notebook) |
-| Ablation epochs / seeds | ___ epochs, ___ seeds |
-| Hardware | Google Colab, ___ GPU |
+| Baseline epochs | 10 |
+| Ablation epochs / seeds | 5 epochs, 2 seeds |
+| Hardware | Google Colab, NVIDIA Tesla T4 GPU |
 
 ### Evaluation protocol
 1. Train; after each epoch compute validation accuracy.
@@ -52,23 +52,38 @@ Each residual block computes `y = ReLU(F(x) + x)`, where `F` is Conv-BN-ReLU-Con
 ### Baseline
 | Metric | Value |
 |---|---|
-| Best validation accuracy | ___% |
-| Test accuracy | ___% |
+| Best validation accuracy | 88.62% |
+| Test accuracy | 88.07% |
 
 ![Baseline plots](results/baseline_plots.png)
 
-The left plot shows training/validation loss, the middle shows validation accuracy per epoch, and the right shows the test confusion matrix.
+The left plot shows training/validation loss, the middle shows validation accuracy per epoch, and the right shows the test confusion matrix. Note that training loss is computed on augmented, label-smoothed batches while the model is still changing, so it is not directly comparable to validation loss.
+
+Per-class test accuracy (baseline, worst first):
+
+| Class | Accuracy |
+|---|---|
+| cat | 73.8% |
+| dog | 82.6% |
+| bird | 82.8% |
+| frog | 88.5% |
+| airplane | 89.0% |
+| deer | 90.2% |
+| horse | 90.8% |
+| truck | 92.8% |
+| ship | 94.5% |
+| automobile | 95.7% |
 
 ### Ablation study
-Each configuration removes exactly one component from the baseline. Values are mean ± std over ___ seeds.
+Each configuration removes exactly one component from the baseline. Values are mean ± std over 2 seeds, with 5 epochs per run. Because of the shorter schedule, the baseline row here (83.21% val) is lower than the 10-epoch baseline above (88.62% val).
 
 | Configuration | Val acc (%) | Test acc (%) | Δ val vs baseline |
 |---|---|---|---|
-| Baseline | ___ ± ___ | ___ ± ___ | — |
-| No augmentation | ___ ± ___ | ___ ± ___ | ___ |
-| No residual connections | ___ ± ___ | ___ ± ___ | ___ |
-| No label smoothing | ___ ± ___ | ___ ± ___ | ___ |
-| No weight decay | ___ ± ___ | ___ ± ___ | ___ |
+| Baseline | 83.21 ± 0.27 | 83.59 ± 0.35 | — |
+| No augmentation | 84.66 ± 0.65 | 84.08 ± 0.16 | +1.45 |
+| No residual connections | 83.65 ± 0.61 | 83.48 ± 0.18 | +0.44 |
+| No label smoothing | 83.52 ± 0.06 | 83.37 ± 0.07 | +0.31 |
+| No weight decay | 82.38 ± 0.40 | 81.93 ± 0.74 | −0.83 |
 
 ![Ablation](results/ablation.png)
 
@@ -76,15 +91,14 @@ Each configuration removes exactly one component from the baseline. Values are m
 ![Predictions](results/predictions.png)
 
 ### Analysis
-Write 4–6 sentences using **your** numbers. Suggested structure:
-- **Biggest effect:** which removal reduced accuracy the most, and by how many points?
-- **Noise check:** differences smaller than the standard deviation across seeds (or under ~0.3 points) should not be treated as real effects.
-- **Residual connections:** at only 6 blocks, plain CNNs can still train well, so a small gap is expected. State what you observed.
-- **Errors:** which classes are weakest (commonly cat/dog and other visually similar pairs; check your confusion matrix and per-class accuracy), and why that is plausible at 32×32 resolution.
+- **Only weight decay clearly mattered.** Removing it was the only change that lowered accuracy on both splits: by 0.83 points on validation and 1.66 points on test.
+- **Removing augmentation did not hurt here; it helped.** Validation accuracy rose by 1.45 points (test: +0.49). This contradicts the initial hypothesis that augmentation would help. A plausible explanation (not tested here) is that with only 5 epochs the model is still underfitting, so random crops and flips make the task harder before they can reduce overfitting. The expected benefit would likely appear with longer training; this study cannot confirm it.
+- **Residual connections and label smoothing were within noise.** Their validation changes (+0.44 and +0.31) are no larger than the seed-to-seed spread (std up to 0.61), and their test changes are slightly negative (−0.11 and −0.22). With only 6 residual blocks, a plain CNN still trains well, so a small gap is expected; skip connections matter more as depth grows.
+- **Where the model fails:** cats (73.8%) and dogs (82.6%) are the weakest classes, plausibly because they are visually similar at 32×32 resolution. Vehicles (automobile 95.7%, ship 94.5%) are the easiest.
 
 ## Limitations
-- Short training runs, so absolute accuracy is below what a longer schedule would achieve.
-- Few seeds give only a rough estimate of run-to-run variance, not a statistical significance test.
+- Ablations ran for only 5 epochs, when the model is still far from converged (83% vs 88.6% after 10 epochs), so conclusions may not hold for full-length training.
+- Two seeds give only a rough estimate of run-to-run variance, not a statistical significance test. Differences under about 0.5 points should be treated as noise.
 - Only one architecture size and one dataset were tested.
 - Each ablation changes one factor at a time, so interactions between factors are not measured.
 
