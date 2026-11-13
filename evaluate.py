@@ -1,5 +1,5 @@
 """Re-measure the model on the official CIFAR-10 test set (10,000 images).
-Usage:  python evaluate.py
+Usage: python evaluate.py
 """
 import argparse
 import numpy as np
